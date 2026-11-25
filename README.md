@@ -2,4 +2,6 @@
 
 Statik "Tezliklə" səhifəsi. Tailwind və şriftlər saytın özündən verilir, CDN yoxdur.
 
-Dəyişiklikdən sonra: `npm install` (bir dəfə), sonra `npm run build`. Bu, `styles.css` və `fonts/` fayllarını yeniləyir; ikisini də commit edin.
+- Mənbə: `index.html`, `tailwind.input.css`, `tailwind.config.js`.
+- `npm install`, sonra `npm run build` -> `public/` qovluğu yaranır (Vercel bunu özü işə salır və `public`-i yayımlayır).
+- `public/` commit edilmir.
