@@ -2,7 +2,8 @@
 <html lang="az" suppressHydrationWarning>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
     <meta name="theme-color" content="#fbf1f3">
     <title>Chinara Mammadova | Tezliklə</title>
     
@@ -19,6 +20,7 @@
             var t = localStorage.getItem("psystat_theme");
             var d = t === "dark" || (!t && window.matchMedia("(prefers-color-scheme: dark)").matches);
             if (d) document.documentElement.classList.add("dark");
+            var m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', d ? '#1c161a' : '#fbf1f3');
         } catch (e) {}
     </script>
 
@@ -26,42 +28,58 @@
         /* CM Lab Şriftləri */
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Noto+Sans:wght@300;400;500&display=swap');
         
-        /* CM Lab Shadcn Light Mode Rəngləri */
+        /* PsyStat ilə eyni rəng tokenləri (açıq rejim) */
         :root {
-            --background: oklch(0.982 0.012 8);
-            --foreground: oklch(0.25 0.03 10);
-            --card: oklch(0.995 0.005 8);
-            --card-foreground: oklch(0.25 0.03 10);
-            --primary: oklch(0.57 0.13 5);
-            --muted-foreground: oklch(0.5 0.035 10);
-            --border: oklch(0.915 0.03 8);
+            color-scheme: light;
+            --background: oklch(0.957 0.032 3);
+            --foreground: oklch(0.24 0.025 350);
+            --card: oklch(1 0 0);
+            --card-foreground: oklch(0.24 0.025 350);
+            --primary: oklch(0.57 0.16 355);
+            --primary-foreground: oklch(0.99 0.006 5);
+            --muted-foreground: oklch(0.43 0.04 350);
+            --border: oklch(0.88 0.045 4);
+            --ring-soft: oklch(0.3 0.1 5 / 10%);
+            --shadow-soft: oklch(0.3 0.1 5 / 10%);
         }
-        
-        /* CM Lab Shadcn Dark Mode Rəngləri */
+
+        /* Tünd rejim */
         html.dark {
-            --background: oklch(0.145 0 0);
-            --foreground: oklch(0.985 0 0);
-            --card: oklch(0.205 0 0);
-            --card-foreground: oklch(0.985 0 0);
-            --primary: oklch(0.922 0 0);
-            --muted-foreground: oklch(0.708 0 0);
-            --border: oklch(1 0 0 / 10%);
+            color-scheme: dark;
+            --background: oklch(0.15 0.012 315);
+            --foreground: oklch(0.96 0.012 15);
+            --card: oklch(0.205 0.016 315);
+            --card-foreground: oklch(0.96 0.012 15);
+            --primary: oklch(0.79 0.105 3);
+            --primary-foreground: oklch(0.23 0.035 350);
+            --muted-foreground: oklch(0.72 0.022 15);
+            --border: oklch(1 0.01 15 / 9%);
+            --ring-soft: oklch(1 0 0 / 10%);
+            --shadow-soft: oklch(0 0 0 / 35%);
         }
 
-        body { 
-            font-family: 'Noto Sans', ui-sans-serif, system-ui, sans-serif; 
+        html { background-color: var(--background); }
+        body {
+            font-family: 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
             background-color: var(--background);
+            background-image:
+                radial-gradient(ellipse at 12% 0%, color-mix(in oklch, var(--primary) 12%, transparent), transparent 55%),
+                radial-gradient(ellipse at 90% 100%, color-mix(in oklch, var(--primary) 8%, transparent), transparent 50%);
+            background-attachment: fixed;
             color: var(--foreground);
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
-        
-        h1, h2 {
-            font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
-        }
+        h1, h2 { font-family: 'Montserrat', ui-sans-serif, system-ui, sans-serif; }
 
+        /* Kart: PsyStat-dakı yumşaq halqa + kölgə, yuxarıda zərif gradient */
         .custom-card {
-            background-color: var(--card);
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(160deg, color-mix(in oklch, var(--primary) 16%, var(--card)) 0%, var(--card) 45%, var(--card) 100%);
             color: var(--card-foreground);
-            border: 1px solid var(--border);
+            border: 0;
+            border-radius: 1.5rem;
+            box-shadow: 0 18px 50px -20px var(--shadow-soft), 0 0 0 1px var(--ring-soft);
         }
 
         .custom-primary-text { color: var(--primary); }
@@ -69,27 +87,41 @@
         .custom-primary-bg-light { background-color: color-mix(in oklch, var(--primary) 15%, transparent); }
         .custom-muted-text { color: var(--muted-foreground); }
 
-        .fade-in { animation: fadeIn 1s ease-in-out; }
+        .eyebrow {
+            display: inline-flex; align-items: center; gap: .4rem;
+            padding: .25rem .75rem; border-radius: 999px;
+            font-size: .75rem; font-weight: 600; letter-spacing: .02em;
+            color: var(--primary);
+            background-color: color-mix(in oklch, var(--primary) 12%, transparent);
+            box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary) 25%, transparent);
+        }
+        .pulse-dot { width: .4rem; height: .4rem; border-radius: 999px; background: var(--primary); animation: pulse 1.6s ease-in-out infinite; }
+        @keyframes pulse { 0%,100% { opacity: .35; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.15); } }
+
+        .fade-in { animation: fadeIn 0.9s ease-out; }
         @keyframes fadeIn {
-            0% { opacity: 0; transform: translateY(10px); }
+            0% { opacity: 0; transform: translateY(12px); }
             100% { opacity: 1; transform: translateY(0); }
         }
+        @media (prefers-reduced-motion: reduce) { .fade-in, .pulse-dot, .animate-bounce { animation: none !important; } }
     </style>
 </head>
-<body class="h-screen flex flex-col items-center justify-center p-4 antialiased transition-colors duration-300">
+<body class="min-h-dvh flex flex-col items-center justify-center p-4 antialiased transition-colors duration-300">
 
-    <div class="max-w-md w-full custom-card rounded-2xl shadow-sm p-8 text-center fade-in">
+    <div class="max-w-md w-full custom-card p-8 sm:p-10 text-center fade-in">
         
         <!-- Loqo/İkon -->
         <div class="mb-6 flex justify-center">
-            <div class="w-16 h-16 custom-primary-bg-light rounded-full flex items-center justify-center custom-primary-text">
+            <div class="w-16 h-16 custom-primary-bg-light rounded-2xl flex items-center justify-center custom-primary-text" style="box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary) 25%, transparent)">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
                 </svg>
             </div>
         </div>
         
-        <h1 class="text-2xl font-bold tracking-tight mb-3">
+        <div class="mb-4"><span class="eyebrow"><span class="pulse-dot"></span>Tezliklə</span></div>
+
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight mb-3">
             Chinara Mammadova
         </h1>
         
