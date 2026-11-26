@@ -52,9 +52,6 @@ function Brand() {
       style={{ fontFamily: "Montserrat Variable, sans-serif" }}
     >
       <b className="font-extrabold text-[#1f3556] dark:text-[#fbe4ea]">CM</b>
-      <span className="ml-1 text-sm font-light text-[#7a1f4b] dark:text-[#6fe0e0]">
-        Psixoloq
-      </span>
       <NewYearHat />
     </Link>
   );
