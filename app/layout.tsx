@@ -6,6 +6,7 @@ import "./newyear.css";
 import { LangProvider } from "@/lib/psystat/i18n";
 import { PortalShell } from "@/components/portal-shell";
 import { ButtonFillEffect } from "@/components/psystat/button-fill-effect";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Çinarə Məmmədova · Psixoloq",
@@ -32,6 +33,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <PortalShell>{children}</PortalShell>
         </LangProvider>
         <ButtonFillEffect />
+        <Analytics />
       </body>
     </html>
   );
