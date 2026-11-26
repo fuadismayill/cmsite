@@ -1,0 +1,63 @@
+.ny-only { display: none; }
+.ny-toggle-floating { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 1rem); right: calc(env(safe-area-inset-right, 0px) + 1rem); z-index: 70; }
+
+@media screen {
+  html[data-theme="newyear"] {
+    --winter-ink: #624051;
+    --winter-sky: #f6e8ee;
+    --winter-horizon: #f8e7ce;
+    --winter-metal: #be985f;
+    --sidebar: #f5ebee;
+    --border: #e3d4da;
+  }
+  html.dark[data-theme="newyear"] {
+    --winter-ink: #d7a2b4;
+    --winter-sky: #312134;
+    --winter-horizon: #46313d;
+    --winter-metal: #dfb777;
+    --sidebar: #241c28;
+    --border: #493642;
+  }
+  [data-theme="newyear"] .ny-only { display: block; }
+  .winter-harbor { color: var(--winter-ink); pointer-events: none; }
+  .winter-sprig { position: absolute; width: 1.35rem; right: -.65rem; top: -.65rem; pointer-events: none; }
+  [data-theme="newyear"] .winter-banner {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: radial-gradient(ellipse at 95% 120%, var(--winter-horizon), transparent 57%),
+      linear-gradient(105deg, var(--card), var(--winter-sky));
+    border: 1px solid var(--border);
+  }
+  [data-theme="newyear"] .winter-banner-art {
+    position: absolute; pointer-events: none; bottom: 0; right: 0;
+    width: min(28%, 13rem); height: auto; z-index: -1;
+  }
+  [data-theme="newyear"] .winter-banner { padding-inline-end: clamp(5.5rem, 25%, 14rem); }
+  @media (max-width: 639px) {
+    [data-theme="newyear"] .winter-banner { padding-inline-end: 1rem; padding-bottom: 2.25rem; }
+    [data-theme="newyear"] .winter-banner-art { width: 5.4rem; }
+  }
+  [data-theme="newyear"] .workspace-topbar {
+    border-bottom-color: color-mix(in srgb, var(--winter-metal) 50%, var(--border));
+    background-color: color-mix(in srgb, var(--winter-sky) 94%, transparent);
+  }
+  [data-theme="newyear"] .winter-dock {
+    background: linear-gradient(120deg,var(--card),var(--winter-sky));
+    border-color: color-mix(in srgb,var(--winter-metal) 55%,var(--border));
+  }
+  [data-theme="newyear"] .winter-gallery button > span:first-child {
+    background: radial-gradient(circle at 85% 27%, var(--winter-metal) 1px, transparent 2px),
+      radial-gradient(circle at 74% 58%, var(--winter-metal) 1px, transparent 2px),
+      linear-gradient(115deg,var(--winter-sky),var(--winter-horizon));
+  }
+  [data-theme="newyear"] .method-window [data-slot="dialog-header"] {
+    background: linear-gradient(110deg,var(--popover) 25%,var(--winter-sky));
+    border-bottom-color: var(--winter-metal);
+  }
+  [data-theme="newyear"] .ny-toggle { background: var(--winter-sky); color: var(--primary); }
+  @media (prefers-reduced-motion: no-preference) {
+    [data-theme="newyear"] .winter-star { animation: harbor-glimmer 4s ease-in-out infinite alternate; }
+    @keyframes harbor-glimmer { from { opacity: .35; } to { opacity: 1; } }
+  }
+}

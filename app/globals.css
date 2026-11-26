@@ -1,0 +1,228 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+  --background: oklch(0.957 0.032 3);
+  --foreground: oklch(0.24 0.025 350);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.025 350);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.24 0.025 350);
+  --primary: oklch(0.57 0.16 355);
+  --primary-foreground: oklch(0.99 0.006 5);
+  --secondary: oklch(0.95 0.03 4);
+  --secondary-foreground: oklch(0.31 0.045 350);
+  --muted: oklch(0.955 0.02 4);
+  --muted-foreground: oklch(0.43 0.04 350);
+  --accent: oklch(0.935 0.045 4);
+  --accent-foreground: oklch(0.36 0.095 355);
+  --destructive: oklch(0.55 0.21 27);
+  --border: oklch(0.88 0.045 4);
+  --input: oklch(0.91 0.035 4);
+  --ring: oklch(0.66 0.14 355);
+  --chart-1: oklch(0.62 0.17 355);
+  --chart-2: oklch(0.62 0.13 300);
+  --chart-3: oklch(0.72 0.12 70);
+  --chart-4: oklch(0.66 0.12 30);
+  --chart-5: oklch(0.52 0.06 350);
+  --radius: 0.9rem;
+  --sidebar: oklch(0.945 0.036 3);
+  --sidebar-foreground: oklch(0.27 0.035 350);
+  --sidebar-primary: oklch(0.57 0.16 355);
+  --sidebar-primary-foreground: oklch(0.99 0.006 5);
+  --sidebar-accent: oklch(0.935 0.045 4);
+  --sidebar-accent-foreground: oklch(0.36 0.095 355);
+  --sidebar-border: oklch(0.91 0.035 4);
+  --sidebar-ring: oklch(0.66 0.14 355);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.15 0.012 315);
+  --foreground: oklch(0.96 0.012 15);
+  --card: oklch(0.205 0.016 315);
+  --card-foreground: oklch(0.96 0.012 15);
+  --popover: oklch(0.205 0.016 315);
+  --popover-foreground: oklch(0.96 0.012 15);
+  --primary: oklch(0.79 0.105 3);
+  --primary-foreground: oklch(0.23 0.035 350);
+  --secondary: oklch(0.27 0.02 315);
+  --secondary-foreground: oklch(0.95 0.012 15);
+  --muted: oklch(0.27 0.02 315);
+  --muted-foreground: oklch(0.72 0.022 15);
+  --accent: oklch(0.31 0.035 345);
+  --accent-foreground: oklch(0.91 0.055 3);
+  --destructive: oklch(0.7 0.19 22);
+  --border: oklch(1 0.01 15 / 9%);
+  --input: oklch(1 0.01 15 / 13%);
+  --ring: oklch(0.72 0.11 3);
+  --chart-1: oklch(0.79 0.105 3);
+  --chart-2: oklch(0.72 0.12 300);
+  --chart-3: oklch(0.79 0.13 80);
+  --chart-4: oklch(0.72 0.14 35);
+  --chart-5: oklch(0.69 0.06 350);
+  --sidebar: oklch(0.18 0.014 315);
+  --sidebar-foreground: oklch(0.95 0.012 15);
+  --sidebar-primary: oklch(0.79 0.105 3);
+  --sidebar-primary-foreground: oklch(0.23 0.035 350);
+  --sidebar-accent: oklch(0.28 0.028 345);
+  --sidebar-accent-foreground: oklch(0.91 0.055 3);
+  --sidebar-border: oklch(1 0.01 15 / 9%);
+  --sidebar-ring: oklch(0.72 0.11 3);
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  html, body { max-width: 100%; overflow-x: clip; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Noto Sans Variable', ui-sans-serif, system-ui, sans-serif;
+    background-image: radial-gradient(ellipse at 12% 0%, color-mix(in oklch, var(--primary) 5%, transparent), transparent 38%);
+    background-attachment: fixed;
+  }
+}
+
+/* viewport-fit=cover lets each iPhone supply its actual cutout and home-indicator insets. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --status-surface: var(--accent-foreground);
+  background-color: var(--background);
+}
+:root.dark { --status-surface: var(--background); }
+
+@media screen {
+  body {
+    padding-top: var(--safe-top);
+    padding-inline: var(--safe-left) var(--safe-right);
+    padding-bottom: var(--safe-bottom);
+  }
+  /* Keep the translucent system clock readable even while a dialog is open. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0 0 auto;
+    height: var(--safe-top);
+    z-index: 100;
+    pointer-events: none;
+    background-color: var(--status-surface);
+  }
+  .workspace-topbar { top: var(--safe-top); }
+  .workspace-mobile-nav {
+    left: calc(var(--safe-left) + 0.75rem);
+    right: calc(var(--safe-right) + 0.75rem);
+    bottom: calc(var(--safe-bottom) + 0.5rem);
+  }
+}
+
+@layer components {
+  [data-slot="button"], .group\/button, [data-fill-target] {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+[data-slot="button"][data-fill]::after, .group\/button[data-fill]::after, [data-fill-target][data-fill]::after {
+  content: "";
+  position: absolute;
+  left: var(--fx, 50%);
+  top: var(--fy, 50%);
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.35;
+  pointer-events: none;
+  animation: button-fill 0.75s ease-out forwards;
+}
+@keyframes button-fill {
+  from { transform: scale(0); opacity: 0.38; }
+  60% { opacity: 0.22; }
+  to { transform: scale(48); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { [data-fill]::after { animation: none !important; display: none; } }
+.theme-switching, .theme-switching *, .theme-switching *::before, .theme-switching *::after { transition: none !important; animation: none !important; }
+
+.workspace-topbar [data-slot="header-icon-button"] { flex: 0 0 auto; }
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .workspace-topbar > div:first-child > button { flex: 1 1 auto; min-width: 0; }
+  .workspace-topbar > div:first-child > div:last-of-type { gap: 0.5rem; }
+}
+
+[data-slot="dialog-content"].workspace-more-sheet {
+  top: auto;
+  bottom: calc(env(safe-area-inset-bottom) + 5rem);
+  translate: -50% 0;
+  width: calc(100% - 1.5rem - var(--safe-left) - var(--safe-right));
+  max-width: 28rem;
+  max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 7rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 1.5rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .workspace-more-sheet[data-open] { animation: menu-sheet-in 200ms ease-out; }
+  @keyframes menu-sheet-in {
+    from { opacity: 0; transform: translateY(1.25rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@media print {
+  body { background: white !important; color: black !important; print-color-adjust: exact; }
+  .workspace-sidebar, .workspace-topbar, .no-print { display: none !important; }
+  main { width: 100% !important; max-width: none !important; padding: 0 !important; }
+  article, section, table { break-inside: avoid; }
+}
