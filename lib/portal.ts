@@ -3,6 +3,6 @@ let instance: SupabaseClient | undefined;
 export function database() {
   return (instance ??= createClient(
     "https://ktrprrplobzkjpbzkxab.supabase.co",
-    "sb_publishable_l35jnyuclubR62_ZzHBVEA_4wqMK8LW",
+    "sb_publishable_-RTvwkHTL6EM-Vi4qS5-vw_4HJmcn3U",
   ));
 }
