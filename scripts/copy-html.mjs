@@ -1,6 +1,4 @@
-// Vercel "public" qovluğunu statik çıxış kimi tapır: səhifəni ora kopyalayır.
-import { copyFileSync, mkdirSync } from "node:fs"
-
-mkdirSync("public", { recursive: true })
-copyFileSync("index.html", "public/index.html")
-console.log("index.html -> public/index.html")
+import { copyFile } from 'node:fs/promises'
+import { build } from 'esbuild'
+await copyFile('index.html','public/index.html')
+await build({entryPoints:['portal.js'],bundle:true,minify:true,outfile:'public/portal.js',format:'esm',target:'es2020'})
