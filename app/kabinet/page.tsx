@@ -112,9 +112,9 @@ export default function Account() {
               },
             })
           : await auth.signInWithPassword({ email, password });
-      if (r.error) throw r.error;
+      if(r.error){setMessage(r.error.status===429?'limit':r.error.code==='email_not_confirmed'?'confirm':r.error.code==='weak_password'?'weak':'error');return}
       form.reset();
-      if (!r.data.session) setMessage("confirm");
+      if (!r.data.session) setMessage("confirm"); else if(new URLSearchParams(location.search).get("next")==="gorus")location.assign("/gorus");
     } catch {
       setMessage("error");
     } finally {
@@ -122,6 +122,8 @@ export default function Account() {
     }
   }
   const messages: Record<string, string> = {
+    limit:t("E-poçt göndərmə limitinə çatılıb. Bir müddət sonra yenidən yoxlayın.","Email rate limit reached. Try again later."),
+    weak:t("Daha güclü şifrə seçin.","Choose a stronger password."),
     error: t(
       "Əməliyyat alınmadı. Məlumatları yoxlayıb yenidən cəhd edin.",
       "Please check your details and try again.",

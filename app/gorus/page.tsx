@@ -1,5 +1,5 @@
 "use client";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { database } from "@/lib/portal";
 import { Screen, Panel, fieldStyle } from "@/components/portal-content";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ export default function Booking() {
   const { t } = useLang(),
     [busy, setBusy] = useState(false),
     [status, setStatus] = useState("");
+  const [signedIn,setSignedIn]=useState<boolean|null>(null);
+  useEffect(()=>{const {data}=database().auth.onAuthStateChange((_,session)=>setSignedIn(!!session));return ()=>data.subscription.unsubscribe()},[]);
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
@@ -59,7 +61,7 @@ export default function Booking() {
     >
       <div className="max-w-2xl">
         <Panel title={t("Görüş məlumatları", "Appointment details")}>
-          <form onSubmit={submit} className="grid gap-5">
+          {signedIn===null?<p>…</p>:!signedIn?<a href="/kabinet?next=gorus" className="font-medium text-primary underline">{t("Görüş üçün daxil olun və ya hesab yaradın","Sign in or register to request an appointment")}</a>:<form onSubmit={submit} className="grid gap-5">
             <label className={fieldStyle}>
               {t("Telefon və ya e-poçt", "Phone or email")}
               <Input
@@ -89,7 +91,7 @@ export default function Booking() {
                 : t("Sorğunu göndər", "Send request")}
             </Button>
             <output>{status}</output>
-          </form>
+          </form>}
         </Panel>
       </div>
     </Screen>
