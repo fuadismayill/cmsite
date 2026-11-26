@@ -38,6 +38,8 @@ export default function Account() {
       window.removeEventListener("focus", focus);
     };
   }, []);
+  const [recipient,setRecipient]=useState("");
+  useEffect(()=>{setRegistration(new URLSearchParams(location.search).get("mode")==="register")},[]);
   const uid = user?.id;
   useEffect(() => {
     let active = true;
@@ -98,6 +100,7 @@ export default function Account() {
       data = new FormData(form),
       email = String(data.get("email")).trim(),
       password = String(data.get("password"));
+    setRecipient(email);
     setBusy(true);
     setMessage("");
     try {
@@ -108,11 +111,11 @@ export default function Account() {
               password,
               options: {
                 data: { portal: "patient" },
-                emailRedirectTo: location.origin + "/kabinet",
+                emailRedirectTo: "https://chinaramammadova.com/kabinet",
               },
             })
           : await auth.signInWithPassword({ email, password });
-      if(r.error){setMessage(r.error.status===429?'limit':r.error.code==='email_not_confirmed'?'confirm':r.error.code==='weak_password'?'weak':'error');return}
+      if(r.error){setMessage(r.error.status===429?'limit':r.error.code==='email_not_confirmed'?'confirm':r.error.code==='weak_password'?'weak':r.error.code==='invalid_credentials'?'credentials':'error');return}
       form.reset();
       if (!r.data.session) setMessage("confirm"); else if(new URLSearchParams(location.search).get("next")==="gorus")location.assign("/gorus");
     } catch {
@@ -122,6 +125,7 @@ export default function Account() {
     }
   }
   const messages: Record<string, string> = {
+    credentials:t("E-poçtu və şifrəni yoxlayıb yenidən daxil olun.","Check your email and password and sign in again."),
     limit:t("E-poçt göndərmə limitinə çatılıb. Bir müddət sonra yenidən yoxlayın.","Email rate limit reached. Try again later."),
     weak:t("Daha güclü şifrə seçin.","Choose a stronger password."),
     error: t(
@@ -141,6 +145,12 @@ export default function Account() {
       "Check the invitation and the email address you signed in with.",
     ),
   };
+  async function resend(){
+    setBusy(true);
+    try{const {error}=await database().auth.resend({type:"signup",email:recipient,options:{emailRedirectTo:"https://chinaramammadova.com/kabinet"}});setMessage(error?(error.status===429?"limit":"error"):"resent")}catch{setMessage("error")}finally{setBusy(false)}
+  }
+  const confirmation=message==="confirm"||message==="resent";
+  const notice=message&&<div role={confirmation?"status":"alert"} className={"my-2 grid gap-2 rounded-xl border p-4 text-sm "+(confirmation?"border-primary/30 bg-primary/10":"border-destructive/35 bg-destructive/10")}><strong>{confirmation?t("E-poçtunuzu təsdiqləyin","Confirm your email"):t("Diqqət","Please check")}</strong><p>{confirmation?<>{recipient} · {t("Təsdiq məktubundakı düyməni açın. Məktubu görmürsünüzsə, Spam qovluğunu yoxlayın.","Open the button in the confirmation email. Check your spam folder if it is missing.")}</>:messages[message]}</p>{confirmation&&<Button variant="outline" disabled={busy} onClick={resend}>{message==="resent"?t("Yenidən göndərildi","Sent again"):t("Məktubu yenidən göndər","Resend email")}</Button>}</div>;
   const states: Record<string, string> = {
     requested: t("Baxılır", "Pending"),
     confirmed: t("Təsdiqləndi", "Confirmed"),
@@ -213,6 +223,7 @@ export default function Account() {
         </>
       ) : (
         <div className="max-w-md">
+          <div aria-label={t("Hesab seçimi","Account options")} className="mb-4 grid grid-cols-2 gap-2">{[false,true].map(register=><Button key={String(register)} disabled={busy} aria-pressed={register===registration} variant={register===registration?"default":"outline"} onClick={()=>{setRegistration(register);setMessage("")}}>{register?t("Qeydiyyatdan keç","Register"):t("Daxil ol","Sign in")}</Button>)}</div>
           <Panel
             title={
               registration
@@ -220,7 +231,8 @@ export default function Account() {
                 : t("Hesaba giriş", "Sign in")
             }
           >
-            <form className="grid gap-4" onSubmit={authenticate}>
+            {notice}
+            <form key={String(registration)} className="grid gap-4" onSubmit={authenticate}>
               <label className={fieldStyle}>
                 {t("E-poçt", "Email")}
                 <Input
@@ -248,28 +260,12 @@ export default function Account() {
                   ? t("Qeydiyyatdan keç", "Register")
                   : t("Daxil ol", "Sign in")}
               </Button>
-              <Button
-                variant="ghost"
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  setRegistration(!registration);
-                  setMessage("");
-                }}
-              >
-                {registration
-                  ? t("Artıq hesabım var", "I have an account")
-                  : t("Yeni hesab yarat", "Create an account")}
-              </Button>
+
             </form>
           </Panel>
         </div>
       )}
-      {message && (
-        <p role="status" className="text-sm">
-          {messages[message]}
-        </p>
-      )}
+      {user && notice}
     </Screen>
   );
 }

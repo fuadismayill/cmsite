@@ -2,15 +2,16 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { database } from "@/lib/portal";
 import { Screen, Panel, fieldStyle } from "@/components/portal-content";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLang } from "@/lib/psystat/i18n";
 export default function Booking() {
   const { t } = useLang(),
     [busy, setBusy] = useState(false),
     [status, setStatus] = useState("");
-  const [signedIn,setSignedIn]=useState<boolean|null>(null);
-  useEffect(()=>{const {data}=database().auth.onAuthStateChange((_,session)=>setSignedIn(!!session));return ()=>data.subscription.unsubscribe()},[]);
+  const [signedIn,setSignedIn]=useState<string|null>(null);
+  useEffect(()=>{const {data}=database().auth.onAuthStateChange((_,session)=>setSignedIn(session?.user.email??""));return ()=>data.subscription.unsubscribe()},[]);
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
@@ -61,11 +62,13 @@ export default function Booking() {
     >
       <div className="max-w-2xl">
         <Panel title={t("Görüş məlumatları", "Appointment details")}>
-          {signedIn===null?<p>…</p>:!signedIn?<a href="/kabinet?next=gorus" className="font-medium text-primary underline">{t("Görüş üçün daxil olun və ya hesab yaradın","Sign in or register to request an appointment")}</a>:<form onSubmit={submit} className="grid gap-5">
+          {signedIn===null?<p>…</p>:!signedIn?<div className="grid gap-4"><p className="text-sm text-muted-foreground">{t("Görüş vaxtını seçmək və cavabı izləmək üçün hesabınıza daxil olun.","Sign in to choose a time and track your request.")}</p><div className="flex flex-wrap gap-2"><Link className={buttonVariants()} href="/kabinet?next=gorus">{t("Daxil ol","Sign in")}</Link><Link className={buttonVariants({variant:"outline"})} href="/kabinet?mode=register&next=gorus">{t("Qeydiyyatdan keç","Register")}</Link></div></div>:<form onSubmit={submit} className="grid gap-5">
             <label className={fieldStyle}>
               {t("Telefon və ya e-poçt", "Phone or email")}
               <Input
                 className="h-11"
+                key={signedIn}
+                defaultValue={signedIn}
                 name="contact"
                 required
                 minLength={3}
