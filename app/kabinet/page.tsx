@@ -153,10 +153,31 @@ export default function Account() {
   }
   const confirmation=message==="confirm"||message==="resent";
   const notice=message&&<div role={confirmation?"status":"alert"} className={"my-2 grid gap-2 rounded-xl border p-4 text-sm "+(confirmation?"border-primary/30 bg-primary/10":"border-destructive/35 bg-destructive/10")}><strong>{confirmation?t("E-poçtunuzu təsdiqləyin","Confirm your email"):t("Diqqət","Please check")}</strong><p>{confirmation?<>{recipient} · {t("Təsdiq məktubundakı düyməni açın. Məktubu görmürsünüzsə, Spam qovluğunu yoxlayın.","Open the button in the confirmation email. Check your spam folder if it is missing.")}</>:messages[message]}</p>{confirmation&&<Button variant="outline" disabled={busy} onClick={resend}>{message==="resent"?t("Yenidən göndərildi","Sent again"):t("Məktubu yenidən göndər","Resend email")}</Button>}</div>;
+  async function cancelVisit(id:string) {
+    if(busy||!window.confirm(t("Bu görüş ləğv edilsin?","Cancel this appointment?")))return;
+    setBusy(true);
+    try {
+      const {data,error}=await database().rpc("portal_cancel_booking",{booking:id});
+      if(error||!data){setMessage("error");return}
+      setRecord(previous=>previous&&({...previous,visits:previous.visits.map(visit=>visit.id===id?{...visit,status:"cancelled"}:visit)}));
+      refresh(n=>n+1);
+    } catch { setMessage("error"); } finally { setBusy(false); }
+  }
+  function addToCalendar(visit: Visit) {
+    const stamp=(value:string)=>new Date(value).toISOString().replace(/[-:]/g,"").replace(/\.\d{3}Z$/,"Z");
+    const text=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//CM//Appointments//EN","BEGIN:VEVENT",
+      "UID:"+visit.id+"@chinaramammadova.com","DTSTAMP:"+stamp(new Date().toISOString()),
+      "DTSTART:"+stamp(visit.scheduled_at??visit.requested_at),"SUMMARY:"+t("Görüş","Appointment"),"END:VEVENT","END:VCALENDAR",""].join("\r\n");
+    const url=URL.createObjectURL(new Blob([text],{type:"text/calendar;charset=utf-8"}));
+    const link=document.createElement("a");
+    link.href=url; link.download="gorus.ics"; link.click();
+    window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
   const states: Record<string, string> = {
     requested: t("Baxılır", "Pending"),
     confirmed: t("Təsdiqləndi", "Confirmed"),
     proposed: t("Yeni vaxt təklif edildi", "New time proposed"),
+    cancelled: t("Ləğv edildi", "Cancelled"),
     declined: t("Qəbul edilmədi", "Declined"),
   };
   const date = (s: string) =>
@@ -234,6 +255,10 @@ export default function Account() {
                       <div className="grid min-w-0 justify-items-start gap-2">
                         <strong className={"rounded-full px-2.5 py-1 text-xs "+tone}>{states[v.status] ?? v.status}</strong>
                         <span className="flex items-start gap-2 text-sm text-muted-foreground"><Clock size={16} className="mt-0.5 shrink-0" aria-hidden="true"/>{date(when)}</span>
+                        {day.getTime()>Date.now() && ["requested","confirmed","proposed"].includes(v.status) && <div className="flex flex-wrap gap-2">
+                          {v.status==="confirmed" && <Button variant="outline" size="sm" onClick={()=>addToCalendar(v)}>{t("Təqvimə əlavə et","Add to calendar")}</Button>}
+                          <Button variant="ghost" size="sm" disabled={busy} onClick={()=>cancelVisit(v.id)}>{t("Ləğv et","Cancel")}</Button>
+                        </div>}
                         {v.status==="proposed" && v.scheduled_at && <p className="text-xs text-muted-foreground">{t("İlk seçiminiz","Originally requested")} · {date(v.requested_at)}</p>}
                       </div>
                     </article>
