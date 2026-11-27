@@ -172,9 +172,10 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 px-4 py-6 pb-[calc(env(safe-area-inset-bottom)+6rem)] sm:px-6 lg:px-8 lg:py-9">
+        <main className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 px-4 py-6 pb-8 sm:px-6 lg:px-8 lg:py-9">
           {children}
         </main>
+        <footer className="border-t border-border/60 px-6 pt-4 pb-[calc(env(safe-area-inset-bottom)+6rem)] text-center text-xs text-muted-foreground lg:pb-4">CM · {new Date().getFullYear()}</footer>
       </div>
       <nav className="winter-dock workspace-mobile-nav fixed inset-x-3 z-30 mx-auto max-w-md rounded-[1.75rem] border border-border/70 bg-card/95 p-1.5 shadow-lg backdrop-blur-md lg:hidden">
         <div className="relative isolate grid grid-cols-5">

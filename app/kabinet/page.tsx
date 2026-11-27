@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { database } from "@/lib/portal";
 import { Screen, Panel, fieldStyle } from "@/components/portal-content";
-import { Button } from "@/components/ui/button";
+import { buttonVariants, Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLang } from "@/lib/psystat/i18n";
 type Result = {
@@ -177,7 +177,8 @@ export default function Account() {
         <p role="status">{t("Yüklənir…", "Loading…")}</p>
       ) : user ? (
         <>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/70 bg-card/80 p-3 shadow-sm">
+            <Link href="/gorus" className={buttonVariants()}>{t("Yeni görüş","New appointment")}</Link>
             <Button variant="outline" onClick={() => refresh((n) => n + 1)}>
               {t("Yenilə", "Refresh")}
             </Button>
@@ -191,7 +192,7 @@ export default function Account() {
               {t("Çıxış", "Sign out")}
             </Button>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <Panel title={t("Nəticələrim", "My results")}>
               {own
                 ? own.results.length
@@ -199,7 +200,7 @@ export default function Account() {
                       <article className="grid gap-2 rounded-xl border bg-background/50 p-4" key={r.id}>
                         <h3 className="font-semibold">{r.title}</h3>
                         <small>{date(r.published_at)}</small>
-                        <p className="whitespace-pre-wrap">{r.explanation}</p>
+                        <p className="whitespace-pre-wrap break-words leading-6 text-muted-foreground">{r.explanation}</p>
                       </article>
                     ))
                   : t(
@@ -208,7 +209,7 @@ export default function Account() {
                     )
                 : t("Yüklənir…", "Loading…")}
             </Panel>
-            <Panel title={t("Görüşlərim", "My appointments")}>
+            <section id="gorusler" className="min-w-0 scroll-mt-24"><Panel title={t("Görüşlərim", "My appointments")}>
               {own
                 ? own.visits.length
                   ? own.visits.map((v) => (
@@ -219,7 +220,7 @@ export default function Account() {
                     ))
                   : <div className="grid gap-3 text-muted-foreground">{t("Hələ görüş sorğunuz yoxdur.", "No requests yet.")}<Link href="/gorus" className="font-medium text-primary underline">{t("Görüş üçün müraciət","Request an appointment")}</Link></div>
                 : t("Yüklənir…", "Loading…")}
-            </Panel>
+            </Panel></section>
           </div>
         </>
       ) : (

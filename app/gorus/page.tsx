@@ -70,7 +70,7 @@ export default function Booking() {
         "Choose a preferred time. You will be contacted after your request is reviewed.",
       )}
     >
-      <div className={signedIn ? "max-w-2xl" : "grid items-start gap-5 lg:grid-cols-[1.2fr_1fr]"}>
+      <div className={"grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]"}>
         <Panel title={t("Görüş məlumatları", "Appointment details")}>
           {signedIn===null?<p>…</p>:!signedIn?<section className="grid gap-4 rounded-2xl border border-primary/20 bg-gradient-to-br from-card to-primary/10 p-5 sm:p-7"><h2 className="text-2xl font-semibold">{t("Görüş sorğusuna başlayın","Start an appointment request")}</h2><p className="text-sm leading-6 text-muted-foreground">{t("Vaxt seçmək və cavabı kabinetdən izləmək üçün hesabınıza daxil olun.","Sign in to choose a time and track the response in your account.")}</p><div className="grid gap-2 sm:flex"><Link className={buttonVariants({size:"lg",className:"min-h-11"})} href="/kabinet?next=gorus">{t("Daxil ol","Sign in")}</Link><Link className={buttonVariants({variant:"outline",size:"lg",className:"min-h-11"})} href="/kabinet?mode=register&next=gorus">{t("Hesab yarat","Create account")}</Link></div></section>:<form onSubmit={submit} onChange={()=>setReview(null)} className="grid gap-5">
             <label className={fieldStyle}>
@@ -104,9 +104,15 @@ export default function Booking() {
                 ? t("Göndərilir…", "Sending…")
                 : review ? t("Sorğunu göndər", "Send request") : t("Davam et", "Continue")}
             </Button>
-            {status && <div role={sent ? "status" : "alert"} className={sent ? "rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm" : "rounded-xl border border-destructive/35 bg-destructive/10 p-4 text-sm"}><p>{status}</p>{sent && <Link href="/kabinet" className="mt-2 inline-block font-medium text-primary underline">{t("Görüşlərimə bax","View my appointments")}</Link>}</div>}
+            {status && <div role={sent ? "status" : "alert"} className={sent ? "rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm" : "rounded-xl border border-destructive/35 bg-destructive/10 p-4 text-sm"}><p>{status}</p>{sent && <Link href="/kabinet#gorusler" className="mt-2 inline-block font-medium text-primary underline">{t("Görüşlərimə bax","View my appointments")}</Link>}</div>}
           </form>}
         </Panel>
+        {signedIn && <Panel title={t("Sorğudan sonra","After you send the request")}>
+          <div className="grid gap-3 text-sm leading-6 text-muted-foreground">
+            <div className="rounded-xl border bg-muted/30 p-4"><p className="font-semibold text-foreground">{t("Təsdiq gözlənilir","Pending confirmation")}</p><p>{t("Psixoloq görüşü təsdiqləyə və ya başqa vaxt təklif edə bilər.","Your psychologist can confirm the appointment or propose another time.")}</p></div>
+            <Link className={buttonVariants({variant:"outline"})} href="/kabinet#gorusler">{t("Görüşlərimə bax","View my appointments")}</Link>
+          </div>
+        </Panel>}
         {signedIn==="" && <Panel title={t("Görüş necə ayarlanır?","How does it work?")}><ol className="grid list-decimal gap-4 pl-6 text-sm marker:font-semibold marker:text-primary"><li>{t("Hesabınıza daxil olun","Sign in to your account")}</li><li>{t("Uyğun vaxtı seçib sorğunu göndərin","Choose a time and send your request")}</li><li>{t("Cavabı kabinetinizdə izləyin","Track the response in your account")}</li></ol></Panel>}
       </div>
     </Screen>
