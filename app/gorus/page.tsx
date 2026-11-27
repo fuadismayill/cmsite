@@ -41,6 +41,10 @@ export default function Booking() {
           contact: String(data.get("contact")).trim(),
           requested_at: time.toISOString(),
         });
+      if (error?.message === "portal_booking_cooldown") {
+        setStatus(t("Bir saat ərzində yalnız bir görüş sorğusu göndərə bilərsiniz. Son sorğudan bir saat sonra yenidən cəhd edin.","You can send one appointment request per hour. Try again one hour after your last request."));
+        return;
+      }
       if (error) throw error;
       form.reset();
       setReview(null);
