@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
+import { CalendarDays, ChevronDown, ClipboardList, Clock, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { database } from "@/lib/portal";
@@ -192,35 +193,60 @@ export default function Account() {
               {t("Çıxış", "Sign out")}
             </Button>
           </div>
-          <div className="grid min-w-0 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="grid min-w-0 items-start gap-5 xl:grid-cols-2">
             <Panel title={t("Nəticələrim", "My results")}>
-              {own
-                ? own.results.length
-                  ? own.results.map((r) => (
-                      <article className="grid gap-2 rounded-xl border bg-background/50 p-4" key={r.id}>
-                        <h3 className="font-semibold">{r.title}</h3>
-                        <small>{date(r.published_at)}</small>
-                        <p className="whitespace-pre-wrap break-words leading-6 text-muted-foreground">{r.explanation}</p>
-                      </article>
-                    ))
-                  : t(
-                      "Hələ nəticə paylaşılmayıb.",
-                      "No results have been shared yet.",
-                    )
-                : t("Yüklənir…", "Loading…")}
+              {own?.results.length ? own.results.map(r => (
+                <details key={r.id} className="group rounded-2xl border bg-gradient-to-br from-card to-primary/5">
+                  <summary className="flex cursor-pointer list-none items-center gap-3 rounded-2xl p-4 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><ClipboardList size={20} aria-hidden="true"/></span>
+                    <span className="grid min-w-0 flex-1 gap-1">
+                      <strong className="break-words">{r.title}</strong>
+                      <time dateTime={r.published_at} className="text-xs text-muted-foreground">{date(r.published_at)}</time>
+                    </span>
+                    <ChevronDown size={17} aria-hidden="true" className="shrink-0 text-muted-foreground transition-transform group-open:rotate-180 motion-reduce:transition-none"/>
+                  </summary>
+                  <div className="portal-enter mx-4 border-t py-4">
+                    <p className="text-xs font-semibold text-primary">{t("Nəticə və izah","Result and explanation")}</p>
+                    <p className="mt-2 whitespace-pre-wrap break-words leading-6 text-muted-foreground">{r.explanation}</p>
+                  </div>
+                </details>
+              )) : own ? (
+                <div className="grid justify-items-center gap-3 rounded-2xl border border-dashed bg-primary/5 px-5 py-8 text-center">
+                  <ClipboardList className="size-8 text-primary" aria-hidden="true"/>
+                  <strong>{t("Hələ nəticə paylaşılmayıb","No results yet")}</strong>
+                  <p className="text-sm text-muted-foreground">{t("Psixoloqun paylaşdığı nəticələr və izahlar burada görünəcək.","Results and explanations shared by your psychologist will appear here.")}</p>
+                </div>
+              ) : <p role="status" className="text-muted-foreground">{t("Yüklənir…","Loading…")}</p>}
             </Panel>
-            <section id="gorusler" className="min-w-0 scroll-mt-24"><Panel title={t("Görüşlərim", "My appointments")}>
-              {own
-                ? own.visits.length
-                  ? own.visits.map((v) => (
-                      <div className="grid gap-2 rounded-xl border bg-background/50 p-4" key={v.id}>
-                        <strong className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">{states[v.status]}</strong>
-                        {date(v.scheduled_at ?? v.requested_at)}
+            <section id="gorusler" className="min-w-0 scroll-mt-24">
+              <Panel title={t("Görüşlərim","My appointments")}>
+                {own?.visits.length ? own.visits.map(v => {
+                  const when = v.scheduled_at ?? v.requested_at;
+                  const day = new Date(when);
+                  const locale = lang === "az" ? "az-AZ" : "en-GB";
+                  const tone = v.status === "confirmed" ? "bg-emerald-500/10 text-emerald-800 dark:text-emerald-300" : v.status === "declined" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary";
+                  return (
+                    <article key={v.id} className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-2xl border bg-gradient-to-br from-card to-primary/5 p-4">
+                      <time dateTime={when} className="grid min-w-14 content-center justify-items-center rounded-xl bg-primary/10 px-2 py-2 text-primary">
+                        <span className="text-2xl font-semibold leading-none">{day.getDate()}</span>
+                        <span className="mt-1 text-xs font-medium">{day.toLocaleDateString(locale,{month:"short"})}</span>
+                      </time>
+                      <div className="grid min-w-0 justify-items-start gap-2">
+                        <strong className={"rounded-full px-2.5 py-1 text-xs "+tone}>{states[v.status] ?? v.status}</strong>
+                        <span className="flex items-start gap-2 text-sm text-muted-foreground"><Clock size={16} className="mt-0.5 shrink-0" aria-hidden="true"/>{date(when)}</span>
+                        {v.status==="proposed" && v.scheduled_at && <p className="text-xs text-muted-foreground">{t("İlk seçiminiz","Originally requested")} · {date(v.requested_at)}</p>}
                       </div>
-                    ))
-                  : <div className="grid gap-3 text-muted-foreground">{t("Hələ görüş sorğunuz yoxdur.", "No requests yet.")}<Link href="/gorus" className="font-medium text-primary underline">{t("Görüş üçün müraciət","Request an appointment")}</Link></div>
-                : t("Yüklənir…", "Loading…")}
-            </Panel></section>
+                    </article>
+                  );
+                }) : own ? (
+                  <div className="grid justify-items-center gap-3 rounded-2xl border border-dashed bg-primary/5 px-5 py-8 text-center">
+                    <CalendarDays className="size-8 text-primary" aria-hidden="true"/>
+                    <strong>{t("Hələ görüş sorğunuz yoxdur","No appointments yet")}</strong>
+                    <Link href="/gorus" className={buttonVariants({variant:"outline"})}>{t("Görüş üçün müraciət","Request an appointment")}<ArrowUpRight aria-hidden="true"/></Link>
+                  </div>
+                ) : <p role="status" className="text-muted-foreground">{t("Yüklənir…","Loading…")}</p>}
+              </Panel>
+            </section>
           </div>
         </>
       ) : (
