@@ -20,7 +20,7 @@ type Visit = {
   scheduled_at: string | null;
   requested_at: string;
 };
-type Cabinet = { owner: string; results: Result[]; visits: Visit[] };
+type Cabinet = { owner: string; linked: boolean; results: Result[]; visits: Visit[] };
 export default function Account() {
   const { t, lang } = useLang();
   const [user, setUser] = useState<User | null | undefined>(),
@@ -82,6 +82,7 @@ export default function Account() {
       if (active) {
         setRecord({
           owner,
+          linked: Boolean(profile.data),
           results: results.data ?? [],
           visits: visits.data ?? [],
         });
@@ -154,10 +155,10 @@ export default function Account() {
   const confirmation=message==="confirm"||message==="resent";
   const notice=message&&<div role={confirmation?"status":"alert"} className={"my-2 grid gap-2 rounded-xl border p-4 text-sm "+(confirmation?"border-primary/30 bg-primary/10":"border-destructive/35 bg-destructive/10")}><strong>{confirmation?t("E-poçtunuzu təsdiqləyin","Confirm your email"):t("Diqqət","Please check")}</strong><p>{confirmation?<>{recipient} · {t("Təsdiq məktubundakı düyməni açın. Məktubu görmürsünüzsə, Spam qovluğunu yoxlayın.","Open the button in the confirmation email. Check your spam folder if it is missing.")}</>:messages[message]}</p>{confirmation&&<Button variant="outline" disabled={busy} onClick={resend}>{message==="resent"?t("Yenidən göndərildi","Sent again"):t("Məktubu yenidən göndər","Resend email")}</Button>}</div>;
   const states: Record<string, string> = {
-    requested: t("Baxılır", "Pending"),
-    confirmed: t("Təsdiqləndi", "Confirmed"),
-    proposed: t("Yeni vaxt təklif edildi", "New time proposed"),
-    declined: t("Qəbul edilmədi", "Declined"),
+    requested: t("Təsdiq gözlənilir", "Pending confirmation"),
+    confirmed: t("Təsdiqlənib", "Confirmed"),
+    proposed: t("Yeni vaxt təklif edilib", "New time proposed"),
+    declined: t("Qəbul edilməyib", "Declined"),
   };
   const date = (s: string) =>
     new Date(s).toLocaleString(lang === "az" ? "az-AZ" : "en-GB");
@@ -180,6 +181,7 @@ export default function Account() {
         <>
           <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/70 bg-card/80 p-3 shadow-sm">
             <Link href="/gorus" className={buttonVariants()}>{t("Yeni görüş","New appointment")}</Link>
+            {own && <span className="rounded-full bg-muted px-3 py-1 text-xs">{own.linked ? t("Kabinet hesabı bağlıdır", "Patient account linked") : t("Kabinet hesabı bağlı deyil", "Patient account not linked")}</span>}
             <Button variant="outline" onClick={() => refresh((n) => n + 1)}>
               {t("Yenilə", "Refresh")}
             </Button>
