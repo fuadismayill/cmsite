@@ -9,12 +9,14 @@ import { useLang } from "@/lib/psystat/i18n";
 export default function Booking() {
   const { t } = useLang(),
     [busy, setBusy] = useState(false),
-    [status, setStatus] = useState("");
+    [status, setStatus] = useState(""),
+    [sent, setSent] = useState(false);
   const [signedIn,setSignedIn]=useState<string|null>(null);
   useEffect(()=>{const {data}=database().auth.onAuthStateChange((_,session)=>setSignedIn(session?.user.email??""));return ()=>data.subscription.unsubscribe()},[]);
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
+    setSent(false);
     const form = e.currentTarget,
       data = new FormData(form),
       time = new Date(String(data.get("time")));
@@ -35,6 +37,7 @@ export default function Booking() {
         });
       if (error) throw error;
       form.reset();
+      setSent(true);
       setStatus(
         t(
           "Sorğunuz göndərildi. Cavab üçün qeyd etdiyiniz əlaqə vasitəsindən istifadə ediləcək.",
@@ -93,7 +96,7 @@ export default function Booking() {
                 ? t("Göndərilir…", "Sending…")
                 : t("Sorğunu göndər", "Send request")}
             </Button>
-            <output>{status}</output>
+            {status && <div role={sent ? "status" : "alert"} className={sent ? "rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm" : "rounded-xl border border-destructive/35 bg-destructive/10 p-4 text-sm"}><p>{status}</p>{sent && <Link href="/kabinet" className="mt-2 inline-block font-medium text-primary underline">{t("Görüşlərimə bax","View my appointments")}</Link>}</div>}
           </form>}
         </Panel>
       </div>
