@@ -223,7 +223,13 @@ export default function Account() {
           </div>
         </>
       ) : (
-        <div className="max-w-md">
+        <div className="grid items-start gap-5 lg:grid-cols-2">
+          <section className="order-2 grid gap-4 rounded-[1.75rem] border border-primary/20 bg-gradient-to-br from-card to-primary/10 p-6 lg:order-0 sm:p-8">
+            <h2 className="text-xl font-semibold">{t("Kabinetdə nələr var?","What’s in your account?")}</h2>
+            <div className="rounded-xl bg-card/70 p-4"><h3 className="font-semibold">{t("Görüşlərim","My appointments")}</h3><p className="mt-1 text-sm text-muted-foreground">{t("Sorğunun cavabını və təklif edilən vaxtı görün.","See responses and proposed times for your requests.")}</p></div>
+            <div className="rounded-xl bg-card/70 p-4"><h3 className="font-semibold">{t("Nəticələrim","My results")}</h3><p className="mt-1 text-sm text-muted-foreground">{t("Psixoloqun sizinlə paylaşdığı nəticə və izahları oxuyun.","Read results and explanations shared with you.")}</p></div>
+          </section>
+          <div className="min-w-0">
           <div aria-label={t("Hesab seçimi","Account options")} className="mb-4 grid grid-cols-2 gap-2">{[false,true].map(register=><Button key={String(register)} disabled={busy} aria-pressed={register===registration} variant={register===registration?"default":"outline"} onClick={()=>{setRegistration(register);setMessage("")}}>{register?t("Qeydiyyatdan keç","Register"):t("Daxil ol","Sign in")}</Button>)}</div>
           <Panel
             title={
@@ -264,6 +270,7 @@ export default function Account() {
 
             </form>
           </Panel>
+          </div>
         </div>
       )}
       {user && notice}
