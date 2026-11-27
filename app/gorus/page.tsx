@@ -11,6 +11,7 @@ export default function Booking() {
     [busy, setBusy] = useState(false),
     [status, setStatus] = useState(""),
     [sent, setSent] = useState(false);
+  const [review, setReview] = useState<{contact:string; time:Date}|null>(null);
   const [signedIn,setSignedIn]=useState<string|null>(null);
   useEffect(()=>{const {data}=database().auth.onAuthStateChange((_,session)=>setSignedIn(session?.user.email??""));return ()=>data.subscription.unsubscribe()},[]);
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -26,6 +27,11 @@ export default function Booking() {
       );
       return;
     }
+    if (!review || review.contact !== String(data.get("contact")).trim() || review.time.getTime() !== time.getTime()) {
+      setReview({contact:String(data.get("contact")).trim(),time});
+      setStatus("");
+      return;
+    }
     setBusy(true);
     setStatus("");
     try {
@@ -37,6 +43,7 @@ export default function Booking() {
         });
       if (error) throw error;
       form.reset();
+      setReview(null);
       setSent(true);
       setStatus(
         t(
@@ -65,7 +72,7 @@ export default function Booking() {
     >
       <div className="max-w-2xl">
         <Panel title={t("Görüş məlumatları", "Appointment details")}>
-          {signedIn===null?<p>…</p>:!signedIn?<div className="grid gap-4"><p className="text-sm text-muted-foreground">{t("Görüş vaxtını seçmək və cavabı izləmək üçün hesabınıza daxil olun.","Sign in to choose a time and track your request.")}</p><div className="flex flex-wrap gap-2"><Link className={buttonVariants()} href="/kabinet?next=gorus">{t("Daxil ol","Sign in")}</Link><Link className={buttonVariants({variant:"outline"})} href="/kabinet?mode=register&next=gorus">{t("Qeydiyyatdan keç","Register")}</Link></div></div>:<form onSubmit={submit} className="grid gap-5">
+          {signedIn===null?<p>…</p>:!signedIn?<div className="grid gap-4"><p className="text-sm text-muted-foreground">{t("Görüş vaxtını seçmək və cavabı izləmək üçün hesabınıza daxil olun.","Sign in to choose a time and track your request.")}</p><div className="flex flex-wrap gap-2"><Link className={buttonVariants()} href="/kabinet?next=gorus">{t("Daxil ol","Sign in")}</Link><Link className={buttonVariants({variant:"outline"})} href="/kabinet?mode=register&next=gorus">{t("Qeydiyyatdan keç","Register")}</Link></div></div>:<form onSubmit={submit} onChange={()=>setReview(null)} className="grid gap-5">
             <label className={fieldStyle}>
               {t("Telefon və ya e-poçt", "Phone or email")}
               <Input
@@ -87,6 +94,7 @@ export default function Booking() {
                 type="datetime-local"
               />
             </label>
+            {review && <div role="status" className="portal-enter grid gap-1 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm"><strong>{t("Göndərməzdən əvvəl yoxlayın","Review before sending")}</strong><span>{review.time.toLocaleString()}</span><span className="break-all">{review.contact}</span></div>}
             <Button
               type="submit"
               className="justify-self-start"
@@ -94,7 +102,7 @@ export default function Booking() {
             >
               {busy
                 ? t("Göndərilir…", "Sending…")
-                : t("Sorğunu göndər", "Send request")}
+                : review ? t("Sorğunu göndər", "Send request") : t("Davam et", "Continue")}
             </Button>
             {status && <div role={sent ? "status" : "alert"} className={sent ? "rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm" : "rounded-xl border border-destructive/35 bg-destructive/10 p-4 text-sm"}><p>{status}</p>{sent && <Link href="/kabinet" className="mt-2 inline-block font-medium text-primary underline">{t("Görüşlərimə bax","View my appointments")}</Link>}</div>}
           </form>}

@@ -226,3 +226,8 @@
   main { width: 100% !important; max-width: none !important; padding: 0 !important; }
   article, section, table { break-inside: avoid; }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .portal-enter { animation: portal-enter 240ms ease-out both; }
+  @keyframes portal-enter { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
+}

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import { database } from "@/lib/portal";
 import { Screen, Panel, fieldStyle } from "@/components/portal-content";
@@ -195,7 +196,7 @@ export default function Account() {
               {own
                 ? own.results.length
                   ? own.results.map((r) => (
-                      <article className="grid gap-1 border-t pt-3" key={r.id}>
+                      <article className="grid gap-2 rounded-xl border bg-background/50 p-4" key={r.id}>
                         <h3 className="font-semibold">{r.title}</h3>
                         <small>{date(r.published_at)}</small>
                         <p className="whitespace-pre-wrap">{r.explanation}</p>
@@ -211,12 +212,12 @@ export default function Account() {
               {own
                 ? own.visits.length
                   ? own.visits.map((v) => (
-                      <div className="grid gap-1 border-t pt-3" key={v.id}>
-                        <strong>{states[v.status]}</strong>
+                      <div className="grid gap-2 rounded-xl border bg-background/50 p-4" key={v.id}>
+                        <strong className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">{states[v.status]}</strong>
                         {date(v.scheduled_at ?? v.requested_at)}
                       </div>
                     ))
-                  : t("Hələ görüş sorğunuz yoxdur.", "No requests yet.")
+                  : <div className="grid gap-3 text-muted-foreground">{t("Hələ görüş sorğunuz yoxdur.", "No requests yet.")}<Link href="/gorus" className="font-medium text-primary underline">{t("Görüş üçün müraciət","Request an appointment")}</Link></div>
                 : t("Yüklənir…", "Loading…")}
             </Panel>
           </div>

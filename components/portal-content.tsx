@@ -14,12 +14,13 @@ export function Screen({
 }) {
   const { t } = useLang();
   return (
-    <div className="grid gap-5">
+    <div className="portal-enter mx-auto grid w-full max-w-6xl gap-6 sm:gap-8">
       <PageHero
         eyebrow={t(
           "Psixoloq · Çinarə Məmmədova",
           "Psychologist · Chinara Mammadova",
         )}
+        className="min-h-28 rounded-[1.75rem] sm:min-h-36 sm:px-8"
         title={title}
         description={description}
       />
