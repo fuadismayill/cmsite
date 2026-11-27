@@ -167,18 +167,18 @@ export default function Account() {
     try{const {data,error}=await database().rpc("portal_request_reschedule",{booking:id,target});if(error||!data)throw Error();setChange(null);refresh(n=>n+1);}
     catch{setMessage("error")}finally{setBusy(false)}
   }
-  const [intake,setIntake]=useState<{full_name:string;contact_preference:string;phone:string|null}|null|undefined>();
+  const [intake,setIntake]=useState<{full_name:string;contact_preference:string;phone:string|null;visit_format:string|null;first_visit:boolean|null;email_reminders:boolean}|null|undefined>();
   useEffect(()=>{
     let active=true;
     setIntake(undefined);
-    if(uid)void database().from("portal_intake").select("full_name,contact_preference,phone").eq("account_id",uid).maybeSingle().then(({data,error})=>{if(active){if(error)setMessage("error");else setIntake(data)}});
+    if(uid)void database().from("portal_intake").select("full_name,contact_preference,phone,visit_format,first_visit,email_reminders").eq("account_id",uid).maybeSingle().then(({data,error})=>{if(active){if(error)setMessage("error");else setIntake(data)}});
     return ()=>{active=false};
   },[uid]);
   async function saveIntake(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
     if(busy||!uid)return;
     const form=new FormData(event.currentTarget);
-    const entry={full_name:String(form.get("name")).trim(),contact_preference:String(form.get("preference")),phone:String(form.get("phone")??"").trim()||null};
+    const entry={full_name:String(form.get("name")).trim(),contact_preference:String(form.get("preference")),phone:String(form.get("phone")??"").trim()||null,visit_format:String(form.get("format")??"")||null,first_visit:form.get("first_visit")===""?null:form.get("first_visit")==="yes",email_reminders:form.get("email_reminders")==="on"};
     setBusy(true);
     try{
       const db=database();
@@ -323,6 +323,9 @@ export default function Account() {
               <label className={fieldStyle}>{t("Ad və soyad","Full name")}<Input name="name" defaultValue={intake?.full_name??""} autoComplete="name" required minLength={2} maxLength={120}/></label>
               <label className={fieldStyle}>{t("Əlaqə üsulu","Contact method")}<select className="rounded-lg border bg-card p-2" name="preference" defaultValue={intake?.contact_preference??"email"}><option value="email">{t("E-poçt","Email")}</option><option value="phone">{t("Telefon","Phone")}</option></select></label>
               <label className={fieldStyle}>{t("Telefon (telefonla əlaqə üçün)","Phone (for phone contact)")}<Input name="phone" defaultValue={intake?.phone??""} type="tel" autoComplete="tel" minLength={5} maxLength={40}/></label>
+              <label className={fieldStyle}>{t("Görüş formatına üstünlük","Preferred appointment format")}<select className="rounded-lg border bg-card p-2" name="format" defaultValue={intake?.visit_format??""}><option value="">{t("Seçilməyib","Not selected")}</option><option value="online">{t("Onlayn","Online")}</option><option value="in_person">{t("Üz-üzə","In person")}</option><option value="either">{t("Hər ikisi uyğundur","Either")}</option></select></label>
+              <label className={fieldStyle}>{t("Bu, Çinarə ilə ilk görüşünüzdür?","Is this your first appointment with Chinara?")}<select className="rounded-lg border bg-card p-2" name="first_visit" defaultValue={intake?.first_visit==null?"":intake.first_visit?"yes":"no"}><option value="">{t("Seçilməyib","Not selected")}</option><option value="yes">{t("Bəli","Yes")}</option><option value="no">{t("Xeyr","No")}</option></select></label>
+              <label className="flex items-center gap-2 text-sm sm:col-span-3"><input type="checkbox" name="email_reminders" defaultChecked={intake?.email_reminders}/>{t("Görüş üçün e-poçt xatırlatması almaq istəyirəm","I want to receive appointment reminders by email")}</label>
               <Button type="submit" disabled={busy}>{t("Məlumatları saxla","Save details")}</Button>
             </form>}
           </Panel>
