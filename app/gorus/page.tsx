@@ -1,120 +1,156 @@
 "use client";
+
 import { useEffect, useState, type FormEvent } from "react";
-import { database } from "@/lib/portal";
-import { Screen, Panel, fieldStyle } from "@/components/portal-content";
 import Link from "next/link";
-import { buttonVariants, Button } from "@/components/ui/button";
+import { Screen, Panel, fieldStyle } from "@/components/portal-content";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { database } from "@/lib/portal";
 import { useLang } from "@/lib/psystat/i18n";
+
+type Options = {
+  state: "approval_required" | "access_pending" | "access_declined" | "phone_required" | "pending" | "ready";
+  slots?: string[];
+};
+
 export default function Booking() {
-  const { t } = useLang(),
-    [busy, setBusy] = useState(false),
-    [status, setStatus] = useState(""),
-    [sent, setSent] = useState(false);
-  const [review, setReview] = useState<{contact:string; time:Date}|null>(null);
-  const [signedIn,setSignedIn]=useState<string|null>(null);
-  useEffect(()=>{const {data}=database().auth.onAuthStateChange((_,session)=>setSignedIn(session?.user.email??""));return ()=>data.subscription.unsubscribe()},[]);
-  async function submit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (busy) return;
-    setSent(false);
-    const form = e.currentTarget,
-      data = new FormData(form),
-      time = new Date(String(data.get("time")));
-    if (!(time.getTime() > Date.now())) {
-      setStatus(
-        t("Gələcək tarix və saat seçin.", "Choose a future date and time."),
-      );
-      return;
-    }
-    if (!review || review.contact !== String(data.get("contact")).trim() || review.time.getTime() !== time.getTime()) {
-      setReview({contact:String(data.get("contact")).trim(),time});
-      setStatus("");
-      return;
-    }
+  const { t, lang } = useLang();
+  const [userId, setUserId] = useState<string | null | undefined>();
+  const [options, setOptions] = useState<Options>();
+  const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [refresh, setRefresh] = useState(0);
+
+  useEffect(() => {
+    const { data } = database().auth.onAuthStateChange((_, session) => {
+      setUserId(session?.user.id ?? null);
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    void (async () => {
+      const result = await database().rpc("portal_booking_options");
+      if (!active) return;
+      if (result.error) setError("load");
+      else setOptions(result.data as Options);
+    })();
+    return () => { active = false; };
+  }, [userId, refresh]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy || !options || !userId) return;
+    const data = new FormData(event.currentTarget);
+    const db = database();
     setBusy(true);
-    setStatus("");
+    setError("");
     try {
-      const { error } = await database()
-        .from("portal_bookings")
-        .insert({
-          contact: String(data.get("contact")).trim(),
-          requested_at: time.toISOString(),
+      if (options.state === "phone_required") {
+        if (!phone) {
+          const number = String(data.get("phone")).trim();
+          const response = await db.auth.updateUser({ phone: number });
+          if (response.error) throw response.error;
+          setPhone(number);
+        } else {
+          const response = await db.auth.verifyOtp({
+            phone, token: String(data.get("code")).trim(), type: "phone_change",
+          });
+          if (response.error) throw response.error;
+          setPhone("");
+          setRefresh((value) => value + 1);
+        }
+      } else if (options.state === "approval_required") {
+        const response = await db.rpc("portal_request_booking_access");
+        if (response.error) throw response.error;
+        setRefresh((value) => value + 1);
+      } else if (options.state === "ready") {
+        const slot = String(data.get("slot"));
+        if (!options.slots?.includes(slot)) return;
+        const response = await db.from("portal_bookings").insert({
+          requested_at: slot,
+          contact: "verified",
         });
-      if (error) throw error;
-      form.reset();
-      setReview(null);
-      setSent(true);
-      setStatus(
-        t(
-          "Sorğunuz göndərildi. Cavab üçün qeyd etdiyiniz əlaqə vasitəsindən istifadə ediləcək.",
-          "Request sent. You will be contacted using the details you provided.",
-        ),
-      );
+        if (response.error) throw response.error;
+        setSent(true);
+        setOptions({ state: "pending" });
+      }
     } catch {
-      setStatus(
-        t(
-          "Sorğu göndərilmədi. Yenidən yoxlayın.",
-          "Unable to send your request. Please try again.",
-        ),
-      );
+      setError(options.state === "ready" ? "booking" : options.state === "approval_required" ? "access" : "phone");
+      if (options.state === "ready") setRefresh((value) => value + 1);
     } finally {
       setBusy(false);
     }
   }
+
+  const formatSlot = new Intl.DateTimeFormat(lang === "az" ? "az-AZ" : "en-GB", {
+    dateStyle: "full", timeStyle: "short", timeZone: "Asia/Baku",
+  });
+
   return (
-    <Screen
-      title={t("Görüş üçün müraciət", "Request an appointment")}
-      description={t(
-        "İstədiyiniz vaxtı bildirin. Sorğunuza baxıldıqdan sonra sizinlə əlaqə saxlanılacaq.",
-        "Choose a preferred time. You will be contacted after your request is reviewed.",
-      )}
-    >
-      <div className={"grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,0.85fr)]"}>
-        <Panel title={t("Görüş məlumatları", "Appointment details")}>
-          {signedIn===null?<p>…</p>:!signedIn?<section className="grid gap-4 rounded-2xl border border-primary/20 bg-gradient-to-br from-card to-primary/10 p-5 sm:p-7"><h2 className="text-2xl font-semibold">{t("Görüş sorğusuna başlayın","Start an appointment request")}</h2><p className="text-sm leading-6 text-muted-foreground">{t("Vaxt seçmək və cavabı kabinetdən izləmək üçün hesabınıza daxil olun.","Sign in to choose a time and track the response in your account.")}</p><div className="grid gap-2 sm:flex"><Link className={buttonVariants({size:"lg",className:"min-h-11"})} href="/kabinet?next=gorus">{t("Daxil ol","Sign in")}</Link><Link className={buttonVariants({variant:"outline",size:"lg",className:"min-h-11"})} href="/kabinet?mode=register&next=gorus">{t("Hesab yarat","Create account")}</Link></div></section>:<form onSubmit={submit} onChange={()=>setReview(null)} className="grid gap-5">
+    <Screen title={t("Görüş üçün müraciət", "Request an appointment")} description={t(
+      "Psixoloqun açdığı saatlardan birini seçin və cavabı kabinetinizdə izləyin.",
+      "Choose a time opened by your psychologist and track the response in your account.",
+    )}>
+      <Panel title={t("Görüş məlumatları", "Appointment details")}>
+        {userId === null && <div className="flex flex-wrap gap-3">
+          <Link className={buttonVariants()} href="/kabinet?next=gorus">{t("Daxil ol", "Sign in")}</Link>
+          <Link className={buttonVariants({ variant: "outline" })} href="/kabinet?mode=register&next=gorus">{t("Hesab yarat", "Create account")}</Link>
+        </div>}
+        {(userId === undefined || (userId && !options && !error)) && <p role="status">{t("Yüklənir…", "Loading…")}</p>}
+        {userId && options?.state === "approval_required" && <form onSubmit={submit} className="grid gap-3">
+          <p>{t("Açıq saatları görmək üçün əvvəlcə psixoloqdan təqvimə giriş istəyin.", "Ask your psychologist for access before you can see available times.")}</p>
+          <Button disabled={busy} className="justify-self-start" type="submit">{t("Təqvimə giriş istə", "Request schedule access")}</Button>
+        </form>}
+        {userId && options?.state === "access_pending" && <div className="grid gap-3">
+          <p role="status">{t("Təqvimə giriş üçün təsdiq gözlənilir.", "Schedule access is pending confirmation.")}</p>
+          <Button variant="outline" className="justify-self-start" onClick={() => setRefresh((value) => value + 1)}>{t("Yenilə", "Refresh")}</Button>
+        </div>}
+        {userId && options?.state === "access_declined" && <p role="status">{t("Təqvimə giriş müraciəti qəbul edilməyib.", "Your schedule access request was declined.")}</p>}
+        {userId && options?.state === "pending" && <div className="grid gap-3">
+          <p role="status">{sent ? t("Sorğunuz göndərildi. Təsdiq gözlənilir.", "Request sent. Pending confirmation.") : t("Cavab gözləyən sorğunuz var.", "You have a pending request.")}</p>
+          <Link className={buttonVariants({ variant: "outline", className: "justify-self-start" })} href="/kabinet#gorusler">{t("Görüşlərimə bax", "View my appointments")}</Link>
+        </div>}
+        {userId && options?.state === "phone_required" && (
+          <form onSubmit={submit} className="grid gap-4">
             <label className={fieldStyle}>
-              {t("Telefon və ya e-poçt", "Phone or email")}
-              <Input
-                className="h-11"
-                key={signedIn}
-                defaultValue={signedIn}
-                name="contact"
-                required
-                minLength={3}
-                maxLength={200}
-              />
+              {phone ? t("SMS təsdiq kodu", "SMS verification code") : t("Beynəlxalq formatda telefon nömrəsi", "Phone number in international format")}
+              {phone
+                ? <Input key="code" required name="code" inputMode="numeric" autoComplete="one-time-code" />
+                : <Input key="phone" required name="phone" type="tel" autoComplete="tel" placeholder="+994" pattern="[+][1-9][0-9]{7,14}" />}
             </label>
+            <div className="flex flex-wrap gap-3">
+              <Button disabled={busy} type="submit">{phone ? t("Nömrəni təsdiqlə", "Verify number") : t("SMS kodu göndər", "Send SMS code")}</Button>
+              {phone && <Button disabled={busy} type="button" variant="outline" onClick={() => setPhone("")}>{t("Nömrəni dəyiş", "Change number")}</Button>}
+            </div>
+          </form>
+        )}
+        {userId && options?.state === "ready" && (options.slots?.length ? (
+          <form onSubmit={submit} className="grid gap-4">
             <label className={fieldStyle}>
-              {t("Tarix və saat (yerli vaxt)", "Date and time (local time)")}
-              <Input
-                className="h-11"
-                name="time"
-                required
-                type="datetime-local"
-              />
+              {t("Açıq saatlar (Bakı vaxtı)", "Available times (Baku time)")}
+              <select name="slot" required defaultValue="" className="min-h-11 rounded-md border bg-background p-2">
+                <option value="" disabled>{t("Saat seçin", "Select a time")}</option>
+                {options.slots.map((slot) => <option key={slot} value={slot}>{formatSlot.format(new Date(slot))}</option>)}
+              </select>
             </label>
-            {review && <div role="status" className="portal-enter grid gap-1 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm"><strong>{t("Göndərməzdən əvvəl yoxlayın","Review before sending")}</strong><span>{review.time.toLocaleString()}</span><span className="break-all">{review.contact}</span></div>}
-            <Button
-              type="submit"
-              className="justify-self-start"
-              disabled={busy}
-            >
-              {busy
-                ? t("Göndərilir…", "Sending…")
-                : review ? t("Sorğunu göndər", "Send request") : t("Davam et", "Continue")}
-            </Button>
-            {status && <div role={sent ? "status" : "alert"} className={sent ? "rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm" : "rounded-xl border border-destructive/35 bg-destructive/10 p-4 text-sm"}><p>{status}</p>{sent && <Link href="/kabinet#gorusler" className="mt-2 inline-block font-medium text-primary underline">{t("Görüşlərimə bax","View my appointments")}</Link>}</div>}
-          </form>}
-        </Panel>
-        {signedIn && <Panel title={t("Sorğudan sonra","After you send the request")}>
-          <div className="grid gap-3 text-sm leading-6 text-muted-foreground">
-            <div className="rounded-xl border bg-muted/30 p-4"><p className="font-semibold text-foreground">{t("Təsdiq gözlənilir","Pending confirmation")}</p><p>{t("Psixoloq görüşü təsdiqləyə və ya başqa vaxt təklif edə bilər.","Your psychologist can confirm the appointment or propose another time.")}</p></div>
-            <Link className={buttonVariants({variant:"outline"})} href="/kabinet#gorusler">{t("Görüşlərimə bax","View my appointments")}</Link>
-          </div>
-        </Panel>}
-        {signedIn==="" && <Panel title={t("Görüş necə ayarlanır?","How does it work?")}><ol className="grid list-decimal gap-4 pl-6 text-sm marker:font-semibold marker:text-primary"><li>{t("Hesabınıza daxil olun","Sign in to your account")}</li><li>{t("Uyğun vaxtı seçib sorğunu göndərin","Choose a time and send your request")}</li><li>{t("Cavabı kabinetinizdə izləyin","Track the response in your account")}</li></ol></Panel>}
-      </div>
+            <Button disabled={busy} type="submit" className="justify-self-start">{t("Sorğunu göndər", "Send request")}</Button>
+          </form>
+        ) : <p>{t("Hazırda açıq saat yoxdur.", "There are no available times right now.")}</p>)}
+        {userId && error && <div className="mt-4 grid gap-2 text-destructive">
+          <p role="alert">{error === "phone"
+            ? t("Telefon təsdiqi alınmadı. Nömrəni və ya SMS kodunu yoxlayın.", "Phone verification failed. Check the number or SMS code.")
+            : error === "booking"
+              ? t("Sorğu göndərilmədi. Saat tutulmuş ola bilər. Son sorğunuzdan 15 dəqiqə keçməyibsə, sonra yenidən yoxlayın.", "Request failed. The time may be taken. If you sent a request in the past 15 minutes, try again later.")
+              : error === "access" ? t("Giriş müraciəti göndərilmədi. E-poçt və telefon təsdiqini yoxlayın.", "Access request failed. Check that your email and phone are verified.")
+                : t("Görüş məlumatları yüklənmədi.", "Unable to load appointment information.")}</p>
+          {error === "load" && <Button variant="outline" className="justify-self-start" onClick={() => { setError(""); setRefresh((value) => value + 1); }}>{t("Yenilə", "Retry")}</Button>}
+        </div>}
+      </Panel>
     </Screen>
   );
 }
