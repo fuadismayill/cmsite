@@ -14,6 +14,16 @@ export default function Booking() {
   const [review, setReview] = useState<{contact:string; time:Date}|null>(null);
   const [signedIn,setSignedIn]=useState<string|null>(null);
   useEffect(()=>{const {data}=database().auth.onAuthStateChange((_,session)=>setSignedIn(session?.user.email??""));return ()=>data.subscription.unsubscribe()},[]);
+  const [slots,setSlots]=useState<string[]|null>(null);
+  const [slotError,setSlotError]=useState(false);
+  const [selected,setSelected]=useState("");
+  async function loadSlots(){
+    setSlotError(false);
+    const {data,error}=await database().rpc("portal_open_slots");
+    if(error){setSlotError(true);setSlots([]);return}
+    setSlots((data as {starts_at:string}[]).map(row=>row.starts_at));
+  }
+  useEffect(()=>{if(signedIn)void loadSlots();else {setSlots(null);setSelected("")}},[signedIn]);
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (busy) return;
@@ -45,8 +55,14 @@ export default function Booking() {
         setStatus(t("Bir saat ərzində yalnız bir görüş sorğusu göndərə bilərsiniz. Son sorğudan bir saat sonra yenidən cəhd edin.","You can send one appointment request per hour. Try again one hour after your last request."));
         return;
       }
+      if(error?.message==="portal_slot_unavailable"||error?.message==="portal_request_pending"){
+        setStatus(error.message==="portal_request_pending"?t("Artıq gözləyən görüş sorğunuz var.","You already have a pending request."):t("Bu saat artıq boş deyil. Başqa vaxt seçin.","This time is no longer available. Choose another time."));
+        setSelected("");setReview(null);await loadSlots();return;
+      }
       if (error) throw error;
       form.reset();
+      setSelected("");
+      void loadSlots();
       setReview(null);
       setSent(true);
       setStatus(
@@ -89,20 +105,19 @@ export default function Booking() {
                 maxLength={200}
               />
             </label>
-            <label className={fieldStyle}>
-              {t("Tarix və saat (yerli vaxt)", "Date and time (local time)")}
-              <Input
-                className="h-11"
-                name="time"
-                required
-                type="datetime-local"
-              />
-            </label>
-            {review && <div role="status" className="portal-enter grid gap-1 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm"><strong>{t("Göndərməzdən əvvəl yoxlayın","Review before sending")}</strong><span>{review.time.toLocaleString()}</span><span className="break-all">{review.contact}</span></div>}
+            <fieldset className="grid gap-3">
+              <legend className="mb-2 font-semibold">{t("Boş saatlar · Bakı vaxtı","Available times · Baku time")}</legend>
+              <input type="hidden" name="time" value={selected}/>
+              {slotError ? <Button type="button" variant="outline" onClick={loadSlots}>{t("Saatlar yüklənmədi · Yenilə","Unable to load times · Retry")}</Button> :
+               slots===null ? <p role="status">{t("Yüklənir…","Loading…")}</p> :
+               !slots.length ? <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">{t("Hazırda seçim üçün boş saat yoxdur.","There are no available times right now.")}</p> :
+               <div className="flex flex-wrap gap-2">{slots.map(slot=><Button key={slot} type="button" aria-pressed={selected===slot} variant={selected===slot?"default":"outline"} onClick={()=>{setSelected(slot);setReview(null);setStatus("")}}>{new Date(slot).toLocaleString(undefined,{timeZone:"Asia/Baku",weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</Button>)}</div>}
+            </fieldset>
+            {review && <div role="status" className="portal-enter grid gap-1 rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm"><strong>{t("Göndərməzdən əvvəl yoxlayın","Review before sending")}</strong><span>{review.time.toLocaleString(undefined,{timeZone:"Asia/Baku"})}</span><span className="break-all">{review.contact}</span></div>}
             <Button
               type="submit"
               className="justify-self-start"
-              disabled={busy}
+              disabled={busy || !selected}
             >
               {busy
                 ? t("Göndərilir…", "Sending…")
