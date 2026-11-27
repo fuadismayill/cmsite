@@ -18,6 +18,7 @@ type Visit = {
   id: string;
   status: string;
   scheduled_at: string | null;
+  reschedule_at: string | null;
   requested_at: string;
 };
 type Cabinet = { owner: string; results: Result[]; visits: Visit[] };
@@ -74,7 +75,7 @@ export default function Account() {
           : { data: [], error: null },
         db
           .from("portal_bookings")
-          .select("id,status,requested_at,scheduled_at")
+          .select("id,status,requested_at,scheduled_at,reschedule_at")
           .eq("account_id", owner)
           .order("created_at", { ascending: false }),
       ]);
@@ -127,6 +128,7 @@ export default function Account() {
     }
   }
   const messages: Record<string, string> = {
+    intake_saved:t("İlk görüş məlumatları saxlanıldı.","First visit details saved."),
     credentials:t("E-poçtu və şifrəni yoxlayıb yenidən daxil olun.","Check your email and password and sign in again."),
     limit:t("E-poçt göndərmə limitinə çatılıb. Bir müddət sonra yenidən yoxlayın.","Email rate limit reached. Try again later."),
     weak:t("Daha güclü şifrə seçin.","Choose a stronger password."),
@@ -152,7 +154,42 @@ export default function Account() {
     try{const {error}=await database().auth.resend({type:"signup",email:recipient,options:{emailRedirectTo:"https://chinaramammadova.com/kabinet"}});setMessage(error?(error.status===429?"limit":"error"):"resent")}catch{setMessage("error")}finally{setBusy(false)}
   }
   const confirmation=message==="confirm"||message==="resent";
-  const notice=message&&<div role={confirmation?"status":"alert"} className={"my-2 grid gap-2 rounded-xl border p-4 text-sm "+(confirmation?"border-primary/30 bg-primary/10":"border-destructive/35 bg-destructive/10")}><strong>{confirmation?t("E-poçtunuzu təsdiqləyin","Confirm your email"):t("Diqqət","Please check")}</strong><p>{confirmation?<>{recipient} · {t("Təsdiq məktubundakı düyməni açın. Məktubu görmürsünüzsə, Spam qovluğunu yoxlayın.","Open the button in the confirmation email. Check your spam folder if it is missing.")}</>:messages[message]}</p>{confirmation&&<Button variant="outline" disabled={busy} onClick={resend}>{message==="resent"?t("Yenidən göndərildi","Sent again"):t("Məktubu yenidən göndər","Resend email")}</Button>}</div>;
+  const notice=message&&<div role={confirmation||message==="intake_saved"?"status":"alert"} className={"my-2 grid gap-2 rounded-xl border p-4 text-sm "+(confirmation||message==="intake_saved"?"border-primary/30 bg-primary/10":"border-destructive/35 bg-destructive/10")}><strong>{confirmation?t("E-poçtunuzu təsdiqləyin","Confirm your email"):message==="intake_saved"?t("Hazırdır","Saved"):t("Diqqət","Please check")}</strong><p>{confirmation?<>{recipient} · {t("Təsdiq məktubundakı düyməni açın. Məktubu görmürsünüzsə, Spam qovluğunu yoxlayın.","Open the button in the confirmation email. Check your spam folder if it is missing.")}</>:messages[message]}</p>{confirmation&&<Button variant="outline" disabled={busy} onClick={resend}>{message==="resent"?t("Yenidən göndərildi","Sent again"):t("Məktubu yenidən göndər","Resend email")}</Button>}</div>;
+  const [change,setChange]=useState<{id:string;slots:string[]}|null>(null);
+  async function openChange(id:string){
+    setBusy(true);
+    try{const {data,error}=await database().rpc("portal_open_slots");if(error)throw error;setChange({id,slots:(data as {starts_at:string}[]).map(r=>r.starts_at)});}
+    catch{setMessage("error")}finally{setBusy(false)}
+  }
+  async function requestChange(id:string,target:string){
+    if(busy||!target)return;
+    setBusy(true);
+    try{const {data,error}=await database().rpc("portal_request_reschedule",{booking:id,target});if(error||!data)throw Error();setChange(null);refresh(n=>n+1);}
+    catch{setMessage("error")}finally{setBusy(false)}
+  }
+  const [intake,setIntake]=useState<{full_name:string;contact_preference:string;phone:string|null}|null|undefined>();
+  useEffect(()=>{
+    let active=true;
+    setIntake(undefined);
+    if(uid)void database().from("portal_intake").select("full_name,contact_preference,phone").eq("account_id",uid).maybeSingle().then(({data,error})=>{if(active){if(error)setMessage("error");else setIntake(data)}});
+    return ()=>{active=false};
+  },[uid]);
+  async function saveIntake(event:FormEvent<HTMLFormElement>){
+    event.preventDefault();
+    if(busy||!uid)return;
+    const form=new FormData(event.currentTarget);
+    const entry={full_name:String(form.get("name")).trim(),contact_preference:String(form.get("preference")),phone:String(form.get("phone")??"").trim()||null};
+    setBusy(true);
+    try{
+      const db=database();
+      const existing=await db.from("portal_intake").select("account_id").eq("account_id",uid).maybeSingle();
+      if(existing.error)throw existing.error;
+      const response=existing.data?await db.from("portal_intake").update(entry).eq("account_id",uid):await db.from("portal_intake").insert(entry);
+      if(response.error)throw response.error;
+      setIntake(entry);
+      setMessage("intake_saved");
+    }catch{setMessage("error")}finally{setBusy(false)}
+  }
   async function cancelVisit(id:string) {
     if(busy||!window.confirm(t("Bu görüş ləğv edilsin?","Cancel this appointment?")))return;
     setBusy(true);
@@ -167,7 +204,7 @@ export default function Account() {
     const stamp=(value:string)=>new Date(value).toISOString().replace(/[-:]/g,"").replace(/\.\d{3}Z$/,"Z");
     const text=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//CM//Appointments//EN","BEGIN:VEVENT",
       "UID:"+visit.id+"@chinaramammadova.com","DTSTAMP:"+stamp(new Date().toISOString()),
-      "DTSTART:"+stamp(visit.scheduled_at??visit.requested_at),"SUMMARY:"+t("Görüş","Appointment"),"END:VEVENT","END:VCALENDAR",""].join("\r\n");
+      "DTSTART:"+stamp(visit.scheduled_at??visit.requested_at),"SUMMARY:"+t("Görüş","Appointment"),"BEGIN:VALARM","TRIGGER:-PT1H","ACTION:DISPLAY","DESCRIPTION:"+t("Görüş xatırlatması","Appointment reminder"),"END:VALARM","END:VEVENT","END:VCALENDAR",""].join("\r\n");
     const url=URL.createObjectURL(new Blob([text],{type:"text/calendar;charset=utf-8"}));
     const link=document.createElement("a");
     link.href=url; link.download="gorus.ics"; link.click();
@@ -259,6 +296,13 @@ export default function Account() {
                           {v.status==="confirmed" && <Button variant="outline" size="sm" onClick={()=>addToCalendar(v)}>{t("Təqvimə əlavə et","Add to calendar")}</Button>}
                           <Button variant="ghost" size="sm" disabled={busy} onClick={()=>cancelVisit(v.id)}>{t("Ləğv et","Cancel")}</Button>
                         </div>}
+                        {v.status==="confirmed" && day.getTime()>Date.now() && <div className="grid w-full gap-2">
+                          {v.reschedule_at && <p className="text-xs text-muted-foreground">{t("Dəyişiklik təsdiq gözləyir","Time change pending")} · {date(v.reschedule_at)}</p>}
+                          <Button variant="outline" size="sm" disabled={busy} onClick={()=>change?.id===v.id?setChange(null):void openChange(v.id)}>{change?.id===v.id?t("Bağla","Close"):t("Vaxtı dəyiş","Reschedule")}</Button>
+                          {change?.id===v.id && <form className="grid gap-2" onSubmit={e=>{e.preventDefault();void requestChange(v.id,String(new FormData(e.currentTarget).get("target")??""))}}>
+                            {change.slots.length ? <><label className="grid gap-1 text-sm">{t("Yeni saat · Bakı vaxtı","New time · Baku time")}<select required name="target" defaultValue="" className="rounded-lg border bg-card p-2"><option value="" disabled>{t("Saatı seçin","Choose a time")}</option>{change.slots.map(slot=><option key={slot} value={slot}>{new Date(slot).toLocaleString(lang,{timeZone:"Asia/Baku"})}</option>)}</select></label><Button type="submit" disabled={busy}>{t("Dəyişiklik sorğusu göndər","Request time change")}</Button></>:<p className="text-sm">{t("Boş saat yoxdur.","No available times.")}</p>}
+                          </form>}
+                        </div>}
                         {v.status==="proposed" && v.scheduled_at && <p className="text-xs text-muted-foreground">{t("İlk seçiminiz","Originally requested")} · {date(v.requested_at)}</p>}
                       </div>
                     </article>
@@ -273,6 +317,15 @@ export default function Account() {
               </Panel>
             </section>
           </div>
+          <Panel title={t("İlk görüş məlumatları","First visit details")}>
+            <p className="text-sm text-muted-foreground">{t("Psixoloqun görüş barədə sizinlə əlaqə saxlaması üçün.","Help your psychologist contact you about your appointment.")}</p>
+            {intake===undefined?<p role="status">{t("Məlumatlar yüklənir…","Loading details…")}</p>:<form key={uid} onSubmit={saveIntake} className="grid gap-3 sm:grid-cols-3">
+              <label className={fieldStyle}>{t("Ad və soyad","Full name")}<Input name="name" defaultValue={intake?.full_name??""} autoComplete="name" required minLength={2} maxLength={120}/></label>
+              <label className={fieldStyle}>{t("Əlaqə üsulu","Contact method")}<select className="rounded-lg border bg-card p-2" name="preference" defaultValue={intake?.contact_preference??"email"}><option value="email">{t("E-poçt","Email")}</option><option value="phone">{t("Telefon","Phone")}</option></select></label>
+              <label className={fieldStyle}>{t("Telefon (telefonla əlaqə üçün)","Phone (for phone contact)")}<Input name="phone" defaultValue={intake?.phone??""} type="tel" autoComplete="tel" minLength={5} maxLength={40}/></label>
+              <Button type="submit" disabled={busy}>{t("Məlumatları saxla","Save details")}</Button>
+            </form>}
+          </Panel>
         </>
       ) : (
         <div className="grid items-start gap-5 lg:grid-cols-2">
